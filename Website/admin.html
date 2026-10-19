@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#101010">
+<title>Xyro AI — Admin Status</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#0c0d12;color:#f5f5f7}*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:20px;background:radial-gradient(ellipse at top,#20223a 0,transparent 55%),#0c0d12}.panel{width:min(100%,480px);border:1px solid #343544;background:#151620;border-radius:22px;padding:24px;box-shadow:0 20px 80px #0006}h1{font-size:24px;margin:0 0 8px}.sub{color:#a6a7b5;font-size:14px;line-height:1.6;margin:0 0 20px}.field{display:block;margin:15px 0 6px;font-size:13px;color:#d5d6df}input{width:100%;padding:13px 14px;border:1px solid #3b3d4e;border-radius:12px;background:#0d0e15;color:#fff;outline:none;font:inherit}input:focus{border-color:#a6a4ff}.primary,.secondary{border:1px solid #414255;border-radius:11px;padding:12px 14px;background:#252638;color:#fff;font:inherit;cursor:pointer}.primary{width:100%;margin-top:16px;background:#7167e8;border-color:#7167e8;font-weight:650}.status{margin-top:16px;border-radius:12px;padding:12px;background:#101119;border:1px solid #333545;font-size:13px;line-height:1.5;overflow-wrap:anywhere}.warn{color:#ffcf8c}.ok{color:#9de6b3}.back{display:inline-block;color:#b8b6ff;margin-top:20px;font-size:13px}button:disabled{opacity:.6;cursor:wait}.info{border:1px solid #39394a;background:#101119;padding:13px;border-radius:12px;font-size:13px;line-height:1.6;color:#c8c8d6;overflow-wrap:anywhere}
+</style></head>
+<body><main class="panel">
+<h1>Pengaturan Admin Xyro</h1>
+<p class="sub">Backend sudah ditentukan oleh pemilik website. Pengunjung tidak perlu memasukkan alamat backend. API key dibaca langsung dari Environment Variables hosting dan tidak dikirim ke browser.</p>
+<div class="field">Backend publik</div><div class="info" id="backendUrl">Memuat alamat backend…</div>
+<label class="field" for="password">Password admin</label><input id="password" type="password" autocomplete="current-password" placeholder="Password admin server">
+<button class="primary" id="check" type="button">Periksa status API</button>
+<div class="status" id="status" role="status">Masukkan password admin lalu periksa status.</div>
+<p class="sub warn">Catatan: API key yang disimpan sebagai Environment Variable tidak dapat diubah dari halaman web. Untuk mengganti key, pemilik harus memperbarui <b>RADOXAI_API_KEY</b> di pengaturan hosting lalu melakukan redeploy. Jangan bagikan password atau API key.</p>
+<a class="back" href="./index.html">← Kembali ke Xyro AI</a>
+</main>
+<script>
+const BACKEND_URL = "https://xyrobest.vercel.app";
+const $ = id => document.getElementById(id);
+$('backendUrl').textContent = BACKEND_URL;
+function say(message, kind=''){ $('status').className='status '+kind; $('status').textContent=message; }
+$('check').addEventListener('click', async () => {
+  const password = $('password').value;
+  if (!password) { say('Masukkan password admin terlebih dahulu.', 'warn'); return; }
+  $('check').disabled = true; say('Memeriksa konfigurasi server…');
+  try {
+    const response = await fetch(BACKEND_URL + '/api/admin/status', { method:'GET', headers:{'x-admin-password':password, 'Accept':'application/json'}, cache:'no-store' });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || `Permintaan gagal (HTTP ${response.status}).`);
+    say(data.configured ? 'Berhasil: backend aktif dan API key sudah tersedia di server. Pengunjung dapat memakai website tanpa mengatur backend.' : 'Backend terjangkau, tetapi RADOXAI_API_KEY belum tersedia. Atur Environment Variables pada proyek backend lalu redeploy.', data.configured ? 'ok' : 'warn');
+  } catch (error) { say('Gagal memeriksa status: ' + error.message + ' Pastikan backend aktif, ADMIN_PASSWORD benar, dan CORS mengizinkan website admin.', 'warn'); }
+  finally { $('check').disabled = false; }
+});
+</script></body></html>
